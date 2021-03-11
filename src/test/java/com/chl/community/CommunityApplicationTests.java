@@ -11,14 +11,11 @@ import java.util.List;
 
 @SpringBootTest
 class CommunityApplicationTests {
-    @Autowired
-    private DiscussPostService discussPostService;
 
     @Test
     void contextLoads() {
-        List<DiscussPost> list = discussPostService.findDiscussPost(0, 0, 10);
-        for (DiscussPost d : list)
-            System.out.println(d);
+        short i = 1;
+        i += 1;
     }
 
 }

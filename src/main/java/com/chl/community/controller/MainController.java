@@ -38,7 +38,7 @@ public class MainController {
                 discussposts.add(map);
             }
         }
-        model.addAttribute("discussposts", discussposts);
+        model.addAttribute("discussPosts", discussposts);
         return "index";
     }
 }
