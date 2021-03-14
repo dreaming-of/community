@@ -83,7 +83,7 @@ public class LoginController implements CommunityConstant {
     public void getKaptcha(HttpServletResponse response, HttpSession session) {
         String text = kaptchaProducer.createText();
         BufferedImage image = kaptchaProducer.createImage(text);
-        session.setAttribute("kapthcha",text);
+        session.setAttribute("kaptcha",text);
         response.setContentType("image/png");
         try {
             OutputStream out = response.getOutputStream();
