@@ -1,4 +1,4 @@
-package com.chl.community.dao;
+package com.chl.community.mapper;
 
 import com.chl.community.entity.User;
 import org.apache.ibatis.annotations.Mapper;

@@ -1,4 +1,4 @@
-package com.chl.community.dao;
+package com.chl.community.mapper;
 
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;

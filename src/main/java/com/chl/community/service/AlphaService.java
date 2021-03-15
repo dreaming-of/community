@@ -1,8 +1,7 @@
 package com.chl.community.service;
 
-import com.chl.community.dao.AlphaDao;
+import com.chl.community.mapper.AlphaDao;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;

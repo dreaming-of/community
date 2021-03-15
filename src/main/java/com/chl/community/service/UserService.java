@@ -1,7 +1,7 @@
 package com.chl.community.service;
 
-import com.chl.community.dao.LoginTicketMapper;
-import com.chl.community.dao.UserMapper;
+import com.chl.community.mapper.LoginTicketMapper;
+import com.chl.community.mapper.UserMapper;
 import com.chl.community.entity.LoginTicket;
 import com.chl.community.entity.User;
 import com.chl.community.utils.CommunityConstant;
