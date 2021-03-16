@@ -1,14 +1,15 @@
 package com.chl.community.service;
 
-import com.chl.community.mapper.LoginTicketMapper;
 import com.chl.community.mapper.UserMapper;
 import com.chl.community.entity.LoginTicket;
 import com.chl.community.entity.User;
 import com.chl.community.utils.CommunityConstant;
 import com.chl.community.utils.CommunityUtil;
 import com.chl.community.utils.MailClient;
+import com.chl.community.utils.RedisKeyUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
@@ -17,6 +18,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class UserService implements CommunityConstant {
@@ -25,13 +27,13 @@ public class UserService implements CommunityConstant {
     private UserMapper userMapper;
 
     @Autowired
-    private LoginTicketMapper loginTicketMapper;
-
-    @Autowired
     private MailClient mailClient;
 
     @Autowired
     private TemplateEngine templateEngine;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     @Value("${community.path.domain}")
     private String domain;
@@ -40,7 +42,10 @@ public class UserService implements CommunityConstant {
     private String contextPath;
 
     public User findUserById(int user_id){
-        return userMapper.selectById(user_id);
+        User user = getCache(user_id);
+        if (user == null)
+            user = initCache(user_id);
+        return user;
     }
 
     public Map<String, Object> register(User user) {
@@ -81,6 +86,7 @@ public class UserService implements CommunityConstant {
             return ACTIVATION_REPEAT;
         }else if(user.getActivationCode().equals(code)){
             userMapper.updateStatus(id, 1);
+            clearCache(id);
             return ACTIVATION_SUCCESS;
         }else{
             return ACTIVATION_FAILUE;
@@ -114,25 +120,50 @@ public class UserService implements CommunityConstant {
         loginTicket.setTicket(CommunityUtil.generateUUID());
         loginTicket.setStatus(0);
         loginTicket.setExpired(new Date(System.currentTimeMillis() + expiredSeconds * 1000));
-        loginTicketMapper.insertLoginTicket(loginTicket);
+        String ticketKey = RedisKeyUtil.getTicketKey(loginTicket.getTicket());
+        redisTemplate.opsForValue().set(ticketKey, loginTicket);
 
         map.put("ticket", loginTicket.getTicket());
         return map;
     }
 
     public void logout(String ticket){
-        loginTicketMapper.updateStatus(ticket, 1);
+        //loginTicketMapper.updateStatus(ticket, 1);
+        String ticketKey = RedisKeyUtil.getTicketKey(ticket);
+        LoginTicket loginTicket = (LoginTicket) redisTemplate.opsForValue().get(ticketKey);
+        loginTicket.setStatus(1);
+        redisTemplate.opsForValue().set(ticketKey, loginTicket);
     }
 
     public LoginTicket getLoginTicket(String ticket){
-        return loginTicketMapper.selectByTicket(ticket);
+        String ticketKey = RedisKeyUtil.getTicketKey(ticket);
+        return (LoginTicket) redisTemplate.opsForValue().get(ticketKey);
     }
 
     public int updateHeader(int userid, String headerUrl){
-        return userMapper.updateHeader(userid, headerUrl);
+        int i = userMapper.updateHeader(userid, headerUrl);
+        clearCache(userid);
+        return i;
     }
 
     public User findUserByName(String username){
         return userMapper.selectByName(username);
+    }
+
+    private User getCache(int userId){
+        String userKey = RedisKeyUtil.getUserKey(userId);
+        return (User) redisTemplate.opsForValue().get(userKey);
+    }
+
+    private User initCache(int userId){
+        User user = userMapper.selectById(userId);
+        String userKey = RedisKeyUtil.getUserKey(userId);
+        redisTemplate.opsForValue().set(userKey, user, 1, TimeUnit.HOURS);
+        return user;
+    }
+
+    private void clearCache(int userId){
+        String userKey = RedisKeyUtil.getUserKey(userId);
+        redisTemplate.delete(userKey);
     }
 }

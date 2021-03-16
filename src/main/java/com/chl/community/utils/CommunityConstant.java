@@ -8,4 +8,5 @@ public interface CommunityConstant {
     int DEFAULT_EXPIRED_SECONDS = 3600 * 12;
     int ENTITY_TYPE_POST = 1;
     int ENTITY_TYPE_COMMENT = 2;
+    int ENTITY_TYPE_USER = 3;
 }

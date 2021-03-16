@@ -2,10 +2,12 @@ package com.chl.community.controller;
 
 import com.chl.community.annotation.LoginRequired;
 import com.chl.community.entity.User;
+import com.chl.community.service.FollowService;
+import com.chl.community.service.LikeService;
 import com.chl.community.service.UserService;
+import com.chl.community.utils.CommunityConstant;
 import com.chl.community.utils.CommunityUtil;
 import com.chl.community.utils.HostHolder;
-import com.sun.org.apache.xpath.internal.operations.Mod;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +18,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileInputStream;
@@ -25,7 +26,7 @@ import java.io.OutputStream;
 
 @Controller
 @RequestMapping("/user")
-public class UserController {
+public class UserController implements CommunityConstant {
     private final static Logger log = LoggerFactory.getLogger(UserController.class);
 
     @Value("${community.path.upload}")
@@ -42,6 +43,12 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private LikeService likeService;
+
+    @Autowired
+    private FollowService followService;
 
     @LoginRequired
     @GetMapping("/setting")
@@ -94,5 +101,25 @@ public class UserController {
         } catch (IOException e) {
             log.error("获取头像失败: " + e.getMessage());
         }
+    }
+
+    @GetMapping("/profile/{userId}")
+    public String getProfilePage(@PathVariable("userId")int userId, Model model){
+        User user = userService.findUserById(userId);
+        if (user == null)
+            throw new RuntimeException("该用户不存在!");
+        model.addAttribute("user",user);
+        int userLikeCount = likeService.findUserLikeCount(userId);
+        model.addAttribute("likeCount", userLikeCount);
+
+        long followeeCount = followService.findFolloweeCount(userId, ENTITY_TYPE_USER);
+        model.addAttribute("followeeCount", followeeCount);
+        long followerCount = followService.findFollowerCount(ENTITY_TYPE_USER, userId);
+        model.addAttribute("followerCount", followerCount);
+        boolean hasFollowed = false;
+        if (hostHolder.getUser() != null)
+            hasFollowed = followService.hasFollowed(hostHolder.getUser().getId(), ENTITY_TYPE_USER, userId);
+        model.addAttribute("hasFollowed", hasFollowed);
+        return "/site/profile";
     }
 }
